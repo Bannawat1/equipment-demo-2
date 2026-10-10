@@ -41,7 +41,7 @@ flowchart LR
 ## 3. รันในเครื่องด้วย Docker Compose (วิธีหลัก)
 
 ```bash
-git clone https://github.com/<OWNER>/nextjs-crud-starter.git
+git clone https://github.com/suriyapi/nextjs-crud-starter.git
 cd nextjs-crud-starter
 cp .env.example .env
 docker compose up --build
