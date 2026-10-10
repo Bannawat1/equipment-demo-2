@@ -1,0 +1,63 @@
+# docker-compose.yml — ไฟล์เดียวใช้ได้ทั้งในเครื่องและบน VPS
+# ค่าตัวแปร ${...} อ่านจากไฟล์ .env ในโฟลเดอร์เดียวกัน (copy มาจาก .env.example)
+#
+# ลำดับการทำงานเมื่อสั่ง `docker compose up --build`:
+#   1. db       เริ่ม PostgreSQL และรอจน healthcheck ผ่าน
+#   2. migrate  รัน migration + seed แล้วจบการทำงาน
+#   3. app      เริ่มแอป Next.js หลังจาก migrate สำเร็จ
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      # :? = ถ้าไม่ได้ตั้งค่าใน .env ให้หยุดพร้อมแสดงข้อความ
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      # named volume: ข้อมูลยังอยู่แม้ลบ container (หายเมื่อสั่ง docker compose down -v)
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $$ = ส่งเครื่องหมาย $ ไปให้ shell ใน container (ไม่ให้ compose แทนค่าเอง)
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # ไม่เปิด port ออกนอก: service อื่นเชื่อมผ่านเครือข่ายภายในของ compose ด้วยชื่อ "db"
+    # (เครื่อง dev เปิด port 5432 ผ่าน docker-compose.override.yml)
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    image: ${MIGRATOR_IMAGE:-equipment-migrator:local}
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    # รันเสร็จแล้วจบ ไม่ต้อง restart
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-dev}
+    # ในเครื่องใช้ image ที่ build เอง บน VPS เปลี่ยนเป็น image จาก GHCR ผ่าน .env
+    # เช่น APP_IMAGE=ghcr.io/<user>/<repo>:latest (ไม่ต้องแก้ไฟล์นี้)
+    image: ${APP_IMAGE:-equipment-app:local}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      # "port บนเครื่อง host:port ใน container"
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  pgdata:

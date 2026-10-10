@@ -1,0 +1,13 @@
+# docker-compose.override.yml — ใช้เฉพาะเครื่อง dev เท่านั้น
+# ---------------------------------------------------------------
+# `docker compose` จะอ่านไฟล์นี้อัตโนมัติและรวมเข้ากับ docker-compose.yml
+#
+# ⚠️ ไม่ต้องนำไฟล์นี้ขึ้น VPS — บน production ไม่ควรเปิด port ของฐานข้อมูลออกนอกเครื่อง
+#    (ถ้ามีไฟล์นี้อยู่บน VPS ให้ลบทิ้ง หรือสั่ง `docker compose -f docker-compose.yml ...`)
+
+services:
+  db:
+    # เปิด port PostgreSQL ให้เครื่อง host เชื่อมต่อได้
+    # ใช้ตอนรัน `npm run dev` หรือ `npm run test:integration` จากเครื่อง (host = localhost)
+    ports:
+      - "5432:5432"
