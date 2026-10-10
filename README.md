@@ -210,6 +210,16 @@ $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?sc
 
 ไฟล์ workflow ใช้นามสกุล `.disabled` เพื่อไม่ให้ GitHub Actions รันจนกว่าจะเปลี่ยนชื่อ
 
+## นำไปใช้กับโปรเจกต์ของตัวเอง (หลังจบ Lab)
+
+ใช้ [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) ร่วมกับ AI coding agent (Claude Code / Codex) เพื่อเพิ่ม Docker + CI/CD ให้งานของตัวเอง:
+
+```bash
+curl -fsSL -o DEPLOY_GUIDE.md https://raw.githubusercontent.com/suriyapi/nextjs-crud-starter/main/docs/DEPLOY_GUIDE.md
+```
+
+แล้วสั่ง AI: *"อ่าน DEPLOY_GUIDE.md แล้วทำขั้นตอน A ถึง H กับโปรเจกต์นี้ ทำตามกฎสำหรับ AI อย่างเคร่งครัด"*
+
 ## 10. ข้อควรระวัง
 
 - 🔒 **ห้าม commit `.env`** (มีรหัสผ่าน) — `.gitignore` กันไว้แล้ว ให้ commit เฉพาะ `.env.example`
