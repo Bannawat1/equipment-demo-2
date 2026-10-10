@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+body {
+  font-family: "Noto Sans Thai", "Sarabun", "Leelawadee UI", Tahoma, system-ui, sans-serif;
+}

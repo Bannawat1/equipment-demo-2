@@ -1,0 +1,31 @@
+// Prisma schema — นิยามโครงสร้างฐานข้อมูลของแอป
+// เอกสาร: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // "native" = ระบบปฏิบัติการของเครื่องที่รันคำสั่ง (Windows/macOS/Linux ของนิสิต)
+  // "linux-musl-openssl-3.0.x" = node:22-alpine ที่ใช้ใน Docker image
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  BORROWED
+  MAINTENANCE
+}
+
+model Equipment {
+  id        Int             @id @default(autoincrement())
+  code      String          @unique // รหัสครุภัณฑ์ เช่น EQ-0001
+  name      String
+  category  String
+  status    EquipmentStatus @default(AVAILABLE)
+  location  String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
