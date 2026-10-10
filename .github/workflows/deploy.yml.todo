@@ -1,0 +1,38 @@
+# TODO(นิสิต): เขียนไฟล์นี้ให้เสร็จ แล้วเปลี่ยนชื่อเป็น deploy.yml (ลบ .todo ออก) GitHub Actions ถึงจะเริ่มรัน
+#
+# ===================================================================
+# CD — build Docker image → push ไป GHCR → deploy ขึ้น VPS
+# ===================================================================
+# เอกสารที่ควรอ่าน:
+#   - Publishing Docker images (GHCR): https://docs.github.com/actions/use-cases-and-examples/publishing-packages/publishing-docker-images
+#   - Working with the Container registry: https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-container-registry
+#   - Using secrets: https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
+#   - docker/build-push-action, docker/login-action, docker/metadata-action
+#
+# ขั้นตอนที่ workflow นี้ต้องมี:
+#   [ ] 1. ทำงานเฉพาะเมื่อ push เข้า branch main
+#   [ ] 2. กำหนด permissions ให้ GITHUB_TOKEN เขียน package ได้
+#   [ ] 3. login เข้า ghcr.io
+#   [ ] 4. build image จาก Dockerfile (target runner) แล้ว push ไป GHCR
+#          - tag อย่างน้อย 2 แบบ: latest และ sha ของ commit
+#          - ส่ง build-arg NEXT_PUBLIC_APP_VERSION (เช่นใช้ sha) เพื่อดูที่ footer ว่าเวอร์ชันใหม่ขึ้นแล้ว
+#   [ ] 5. build + push image ของ service migrate ด้วย (target migrator) — บน VPS จะได้ไม่ต้อง build เอง
+#   [ ] 6. SSH เข้า VPS แล้ว:
+#          - ตั้งค่า APP_IMAGE / MIGRATOR_IMAGE ให้ชี้ไปที่ image บน GHCR
+#          - docker compose pull
+#          - docker compose up -d
+#   [ ] 7. (แนะนำ) ตรวจว่า https://<โดเมน>/api/health ตอบ 200 หลัง deploy
+#
+# คำใบ้:
+#   - ชื่อ image บน GHCR ต้องเป็นตัวพิมพ์เล็กทั้งหมด
+#   - เก็บ host / user / private key ของ VPS ใน GitHub Secrets ห้ามเขียนลงไฟล์นี้ตรงๆ
+#   - บน VPS ต้องมีไฟล์ .env ของตัวเอง (สร้างเองบนเครื่อง ห้าม commit) และ docker-compose.yml
+#   - ถ้า package บน GHCR เป็น private ต้องให้ VPS docker login ก่อน pull
+#   - ให้ job นี้รันหลัง CI ผ่านเท่านั้น จะได้ไม่ deploy โค้ดที่ test พัง (ลองค้นเรื่อง workflow_run หรือ needs)
+#   - ไม่ต้องนำ docker-compose.override.yml ขึ้น VPS
+
+# name: ...
+
+# on: ...
+
+# jobs: ...

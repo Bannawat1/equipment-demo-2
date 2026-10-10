@@ -1,0 +1,35 @@
+# TODO(นิสิต): เขียนไฟล์นี้ให้เสร็จ แล้วเปลี่ยนชื่อเป็น ci.yml (ลบ .todo ออก) GitHub Actions ถึงจะเริ่มรัน
+#
+# ===================================================================
+# CI — ตรวจคุณภาพโค้ดทุกครั้งที่ push และเปิด Pull Request
+# ===================================================================
+# เอกสารที่ควรอ่าน:
+#   - Workflow syntax: https://docs.github.com/actions/reference/workflow-syntax-for-github-actions
+#   - Service containers (PostgreSQL): https://docs.github.com/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers
+#   - actions/setup-node: https://github.com/actions/setup-node
+#
+# ขั้นตอนที่ workflow นี้ต้องมี:
+#   [ ] 1. กำหนดว่า workflow ทำงานเมื่อไร (push / pull_request)
+#   [ ] 2. checkout โค้ด
+#   [ ] 3. ติดตั้ง Node.js ตามเวอร์ชันใน .nvmrc และเปิด cache ของ npm
+#   [ ] 4. npm ci
+#   [ ] 5. npm run lint
+#   [ ] 6. npm run typecheck
+#   [ ] 7. npm test   (unit test — ไม่ต้องใช้ DB)
+#   [ ] 8. เตรียม PostgreSQL 16 เป็น service container
+#   [ ] 9. รัน migration กับ DB นั้น (ดู npm scripts ใน package.json)
+#   [ ] 10. npm run test:integration
+#   [ ] 11. ทดลอง docker build ให้ผ่าน (ยังไม่ต้อง push image)
+#
+# คำใบ้:
+#   - ใน GitHub Actions ไม่มีไฟล์ .env — ต้องตั้ง DATABASE_URL เป็น env ของ job/step เอง
+#   - service container เข้าถึงได้ที่ localhost เมื่อ map port ไว้ (ไม่ใช่ host "db" แบบใน compose)
+#   - ควรรอให้ Postgres พร้อมก่อนรัน test (ดู options: --health-cmd ในเอกสาร service containers)
+#   - `npm run build` ไม่ต้องใช้ DB เพราะหน้าที่อ่าน DB เป็น dynamic
+#   - แยกเป็นหลาย job ได้ ลองคิดว่าแบบไหนทำให้เห็นผลเร็วและอ่านง่าย
+
+# name: ...
+
+# on: ...
+
+# jobs: ...
