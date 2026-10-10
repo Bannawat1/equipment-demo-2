@@ -47,7 +47,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-✅ เปิด <http://localhost:3000> แล้วเพิ่ม ดู แก้ไข ลบข้อมูลได้ และ <http://localhost:3000/api/health> ตอบ `{"status":"ok","db":"up"}`
+✅ เปิด <http://localhost:3300> แล้วเพิ่ม ดู แก้ไข ลบข้อมูลได้ และ <http://localhost:3300/api/health> ตอบ `{"status":"ok","db":"up"}`
 
 - **หยุด:** `docker compose down` — ลบ container แต่ **ข้อมูลยังอยู่**
 - **ลบข้อมูลทั้งหมด:** `docker compose down -v`
@@ -55,6 +55,11 @@ docker compose up --build
 > **เรื่อง volume:** ข้อมูลของ PostgreSQL เก็บใน named volume ชื่อ `pgdata` ซึ่งแยกจาก container
 > การลบ container (`down`) จึงไม่ทำให้ข้อมูลหาย ต้องสั่ง `-v` เพื่อลบ volume ด้วย
 > ครั้งต่อไปที่ `up` ฐานข้อมูลจะว่างเปล่า แล้ว migrate + seed จะสร้างข้อมูลตัวอย่างให้ใหม่
+
+> **เรื่อง port:** ค่าเริ่มต้นใช้ port **3300** (แอป) และ **5532** (PostgreSQL) บนเครื่อง
+> เพื่อไม่ชนกับ project อื่นที่มักใช้ 3000 / 5432
+> ถ้าขึ้น error `port is already allocated` ให้แก้ `APP_PORT` หรือ `DB_PORT` ใน `.env` เป็นเลขอื่น แล้ว `docker compose up` ใหม่
+> (port ภายใน container ยังเป็น 3000 / 5432 เหมือนเดิม ไม่ต้องแก้ `DATABASE_URL` ที่ใช้ host `db`)
 
 คำสั่งที่ใช้บ่อย:
 
@@ -69,23 +74,24 @@ docker compose logs migrate  # ดูผลการ migrate + seed
 ใช้เมื่ออยากแก้โค้ดแล้วเห็นผลทันที (hot reload) ต้องมี Node.js 22
 
 ```bash
-docker compose up -d db      # เปิดเฉพาะฐานข้อมูล (port 5432 เปิดผ่าน docker-compose.override.yml)
+docker compose up -d db      # เปิดเฉพาะฐานข้อมูล (port 5532 เปิดผ่าน docker-compose.override.yml)
 ```
 
-แก้ `DATABASE_URL` ใน `.env` ให้ host เป็น `localhost` แทน `db`
+แก้ `DATABASE_URL` ใน `.env` ให้ host เป็น `localhost` และ port เป็น `5532` (ค่า `DB_PORT`) แทน `db:5432`
 
 ```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/equipment_db?schema=public
+DATABASE_URL=postgresql://postgres:postgres@localhost:5532/equipment_db?schema=public
 ```
 
 ```bash
 npm install
 npm run db:deploy            # สร้างตาราง
 npm run db:seed              # ใส่ข้อมูลตัวอย่าง
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:3300
 ```
 
-> ⚠️ ถ้าจะกลับไปใช้ `docker compose up` ให้เปลี่ยน host กลับเป็น `db`
+> ⚠️ ถ้าจะกลับไปใช้ `docker compose up` ให้เปลี่ยนกลับเป็น `db:5432`
+> และหยุด `npm run dev` ก่อน เพราะทั้งคู่ใช้ port 3300
 
 ## 5. นำขึ้น repo ของตัวเอง
 
@@ -125,7 +131,7 @@ image `runner` ไม่มี source code และ devDependencies จึง�
 
 - ทุกค่าอ่านจาก `.env` — service ต่างๆ คุยกันด้วยชื่อ service เช่น host `db`
 - `APP_IMAGE` / `MIGRATOR_IMAGE` ใช้เปลี่ยนเป็น image จาก GHCR ตอน deploy โดยไม่ต้องแก้ไฟล์ compose
-- `docker-compose.override.yml` ถูกอ่านอัตโนมัติในเครื่อง dev เพื่อเปิด port 5432
+- `docker-compose.override.yml` ถูกอ่านอัตโนมัติในเครื่อง dev เพื่อเปิด port `${DB_PORT}` (5532)
 
 ## 7. รันคำสั่งตรวจสอบ
 
@@ -141,12 +147,12 @@ integration test ต้องมี PostgreSQL ทำงานอยู่ (เ�
 
 ```bash
 # macOS / Linux / Git Bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/equipment_db?schema=public" npm run test:integration
+DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?schema=public" npm run test:integration
 ```
 
 ```powershell
 # Windows PowerShell
-$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/equipment_db?schema=public"; npm run test:integration
+$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?schema=public"; npm run test:integration
 ```
 
 > integration test จะสร้างและลบเฉพาะข้อมูลที่ `code` ขึ้นต้นด้วย `TEST-` ข้อมูล seed จึงไม่หาย

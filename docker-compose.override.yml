@@ -7,7 +7,7 @@
 
 services:
   db:
-    # เปิด port PostgreSQL ให้เครื่อง host เชื่อมต่อได้
+    # เปิด port PostgreSQL ให้เครื่อง host เชื่อมต่อได้ ที่ localhost:${DB_PORT} (ค่าเริ่มต้น 5532)
     # ใช้ตอนรัน `npm run dev` หรือ `npm run test:integration` จากเครื่อง (host = localhost)
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5532}:5432"
