@@ -212,13 +212,13 @@ $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?sc
 
 ## นำไปใช้กับโปรเจกต์ของตัวเอง (หลังจบ Lab)
 
-ใช้ [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) ร่วมกับ AI coding agent (Claude Code / Codex) เพื่อเพิ่ม Docker + CI/CD ให้งานของตัวเอง:
+ใช้ guideline [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) ร่วมกับ AI coding agent (Claude Code / Codex) เพื่อเพิ่ม Docker + CI/CD ให้งานของตัวเอง:
 
 ```bash
 curl -fsSL -o DEPLOY_GUIDE.md https://raw.githubusercontent.com/suriyapi/nextjs-crud-starter/main/docs/DEPLOY_GUIDE.md
 ```
 
-แล้วสั่ง AI: *"อ่าน DEPLOY_GUIDE.md แล้วทำขั้นตอน A ถึง H กับโปรเจกต์นี้ ทำตามกฎสำหรับ AI อย่างเคร่งครัด"*
+แล้วสั่ง AI: *"อ่าน DEPLOY_GUIDE.md แล้ววิเคราะห์โปรเจกต์ของฉัน เสนอแผนให้ยืนยันก่อนลงมือ และทำตามกฎอย่างเคร่งครัด"*
 
 ## 10. ข้อควรระวัง
 
