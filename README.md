@@ -11,9 +11,11 @@ repo นี้คือแอป **ระบบจัดการครุภั
 
 1. รันแอปในเครื่องด้วย Docker Compose และทำความเข้าใจ `Dockerfile` กับ `docker-compose.yml`
 2. นำโค้ดขึ้น GitHub repo ของตัวเอง
-3. เขียน **GitHub Actions** สำหรับ CI (lint / typecheck / test / build)
-4. เขียน **GitHub Actions** สำหรับ CD (build image → push ขึ้น GHCR → deploy ขึ้น VPS)
+3. เปิดใช้ **GitHub Actions** สำหรับ CI (lint / typecheck / test / build)
+4. เปิดใช้ **GitHub Actions** สำหรับ CD (build image → push ขึ้น GHCR → deploy ขึ้น VPS)
 5. ตั้งค่า **Nginx** + HTTPS บน VPS ที่ผูกโดเมนจริง
+
+ไฟล์ทั้งหมดเตรียมไว้ให้แล้ว (ดูหัวข้อ 9) — ไม่ต้องพิมพ์หรือ copy โค้ดเอง
 
 ```
  git push ──▶ GitHub Actions: CI ──▶ build Docker image ──▶ GHCR ──▶ VPS
@@ -185,23 +187,28 @@ $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?sc
 ├── tests/
 │   ├── unit/                    # npm test
 │   └── integration/             # npm run test:integration
-├── .github/workflows/*.yml.todo # 📝 งานของนิสิต
-├── deploy/nginx.conf            # 📝 งานของนิสิต
+├── .github/workflows/
+│   ├── ci.yml.disabled          # CI — เปิดใช้ในส่วนที่ 2
+│   └── deploy.yml.disabled      # build → GHCR → VPS — เปิดใช้ในส่วนที่ 3
+├── deploy/
+│   ├── make-env.sh              # สร้าง .env บน VPS (ส่วนที่ 4)
+│   └── nginx.conf               # Nginx reverse proxy (ส่วนที่ 5)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── docker-compose.override.yml  # เฉพาะเครื่อง dev
 └── .env.example
 ```
 
-## 9. งานของนิสิต
+## 9. ไฟล์สำหรับ CI/CD ที่เตรียมไว้
 
-| ไฟล์ | สิ่งที่ต้องทำ |
-|---|---|
-| `.github/workflows/ci.yml.todo` | CI: checkout, setup-node + cache, `npm ci`, lint, typecheck, unit test, Postgres service + migrate + integration test, ทดลอง `docker build` — เสร็จแล้ว **เปลี่ยนชื่อเป็น `ci.yml`** |
-| `.github/workflows/deploy.yml.todo` | CD: build + push image ไป GHCR (tag `latest` และ `sha`, ส่ง build-arg `NEXT_PUBLIC_APP_VERSION`), SSH เข้า VPS, ตั้ง `APP_IMAGE`, `docker compose pull` แล้ว `up -d` เฉพาะ branch `main` — เสร็จแล้ว **เปลี่ยนชื่อเป็น `deploy.yml`** |
-| `deploy/nginx.conf` | reverse proxy: `server_name` เป็นโดเมนจริง, `proxy_pass` ไปที่ port ของแอป แล้วทำ HTTPS ด้วย certbot |
+| ไฟล์ | ใช้ในส่วน | วิธีเปิดใช้ / ใช้งาน |
+|---|---|---|
+| `.github/workflows/ci.yml.disabled` | 2 | `git mv .github/workflows/ci.yml.disabled .github/workflows/ci.yml` |
+| `.github/workflows/deploy.yml.disabled` | 3, 6 | `git mv .github/workflows/deploy.yml.disabled .github/workflows/deploy.yml` — job `deploy` จะถูกข้ามจนกว่าจะตั้ง Variable `APP_URL` และ Secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` |
+| `deploy/make-env.sh` | 4 | บน VPS: `sh make-env.sh ghcr.io/<username>/<repo>` สร้าง `.env` พร้อมสุ่มรหัสผ่าน |
+| `deploy/nginx.conf` | 5 | บน VPS: `sed 's/example\.com/<โดเมน>/g' ... > /etc/nginx/sites-available/equipment` (ดูคอมเมนต์ในไฟล์) |
 
-ในแต่ละไฟล์มี checklist และคำใบ้อยู่แล้ว ไฟล์ workflow ใช้นามสกุล `.yml.todo` เพื่อไม่ให้ GitHub Actions รันไฟล์ที่ยังเขียนไม่เสร็จ
+ไฟล์ workflow ใช้นามสกุล `.disabled` เพื่อไม่ให้ GitHub Actions รันจนกว่าจะเปลี่ยนชื่อ
 
 ## 10. ข้อควรระวัง
 
@@ -209,7 +216,7 @@ $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5532/equipment_db?sc
 - 🔑 **secret ทุกอย่าง** (SSH key, IP/host ของ VPS, รหัสผ่าน DB บน production) เก็บใน **GitHub Secrets** ห้ามเขียนลงไฟล์ workflow
 - 🏗️ **`NEXT_PUBLIC_*` ถูกฝังตอน build** ไม่ได้อ่านตอนรัน — ถ้าเปลี่ยนค่าต้อง build image ใหม่ และต้องส่งผ่าน `--build-arg` (ใน CI ด้วย)
 - 🚫 **`docker-compose.override.yml` ไม่ต้องขึ้น VPS** — ไฟล์นี้เปิด port ฐานข้อมูลออกนอกเครื่อง
-- 🔐 บน VPS ให้ตั้ง `POSTGRES_PASSWORD` ใหม่ที่เดายาก (อย่าใช้ค่าจาก `.env.example`) และแก้ `DATABASE_URL` ให้ตรงกัน
+- 🔐 บน VPS ให้สร้าง `.env` ด้วย `deploy/make-env.sh` (สุ่มรหัสผ่านใหม่ให้) — อย่าใช้ค่าจาก `.env.example`
 
 ## License
 

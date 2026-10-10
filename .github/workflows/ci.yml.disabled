@@ -1,0 +1,81 @@
+# ปิดไว้ก่อน — เปิดใช้งานในส่วนที่ 2 ด้วยคำสั่ง:
+#   git mv .github/workflows/ci.yml.disabled .github/workflows/ci.yml
+#
+# CI — ตรวจคุณภาพโค้ดทุกครั้งที่ push และเปิด Pull Request
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ---------- job 1: ตรวจโค้ด + test ----------
+  test:
+    runs-on: ubuntu-latest
+
+    # PostgreSQL สำหรับ integration test (ทำงานคู่กับ job นี้ แล้วถูกลบเมื่อ job จบ)
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: equipment_test
+        ports:
+          - 5432:5432
+        # รอจน Postgres พร้อมก่อน แล้วค่อยเริ่ม steps
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # ใน CI ไม่มีไฟล์ .env — ตั้งค่าตรงนี้แทน (host = localhost เพราะ map port ไว้)
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equipment_test?schema=public
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit test
+        run: npm test
+
+      - name: Migrate database
+        run: npm run db:deploy
+
+      - name: Integration test
+        run: npm run test:integration
+
+  # ---------- job 2: ทดลอง build Docker image ----------
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test # รันหลัง job test ผ่านเท่านั้น
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build app image (runner)
+        run: docker build --target runner -t equipment-app:ci .
+
+      - name: Build migrator image
+        run: docker build --target migrator -t equipment-migrator:ci .
+
+      - name: Show image size
+        run: docker images equipment-app:ci
